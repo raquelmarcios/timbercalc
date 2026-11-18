@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TimberCalc · Dimensionamento de peças de madeira (NBR 7190)</title>
+<meta name="description" content="Ferramenta acadêmica para dimensionamento de peças de madeira à tração e à compressão paralela às fibras, com os critérios da ABNT NBR 7190-1:2022 e da NBR 7190:1997.">
+<style>
+:root{
+  --paper:#EEF1EC; --card:#FBFCFA; --ink:#1C2B27; --muted:#5E6F69; --line:#C9D2CC;
+  --pine:#1F4D3A; --pine-ink:#F3F7F4; --mark:#F6D84C; --ok:#1F6B45; --fail:#A8321F;
+  --grid:rgba(31,77,58,.07); --serif:Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#16201D; --card:#1E2B27; --ink:#E7EEEA; --muted:#97A8A1; --line:#34463F;
+    --pine:#6FB592; --pine-ink:#10201A; --mark:#E8C93A; --ok:#7DD3A0; --fail:#FF8F7A; --grid:rgba(111,181,146,.07)}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px}
+header{background:var(--paper);border-bottom:2px solid var(--ink)}
+.topo{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px;padding:18px 0 12px}
+.marca h1{margin:0;font:700 28px/1 var(--serif);letter-spacing:.2px}
+.marca p{margin:5px 0 0;font:italic 14px/1.35 var(--serif);color:var(--muted)}
+nav.menu{display:flex;gap:6px}
+nav.menu button{padding:8px 14px;border:2px solid var(--ink);border-radius:8px;background:none;color:var(--ink);font:600 14px system-ui;cursor:pointer}
+nav.menu button[aria-current=page]{background:var(--pine);color:var(--pine-ink);border-color:var(--pine)}
+main{padding:8px 0 40px}
+h2{font:700 19px/1.25 var(--serif);margin:30px 0 12px;color:var(--pine);border-bottom:1px solid var(--line);padding-bottom:6px}
+h2 .n{color:var(--muted);font-weight:400;margin-right:6px}
+h3{font:600 15px system-ui;margin:16px 0 4px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:10px;overflow:hidden}
+.seg button{padding:11px 10px;border:0;background:var(--card);color:var(--ink);font:600 15px system-ui;cursor:pointer}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button[aria-pressed=true]{background:var(--pine);color:var(--pine-ink)}
+.nota{font-size:13.5px;color:var(--muted);margin:8px 0 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.full{grid-column:1/-1}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:10px 11px;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:8px}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--mark);outline-offset:1px}
+details{margin-top:14px;border:1.5px dashed var(--line);border-radius:8px;padding:10px 12px}
+summary{cursor:pointer;font-size:14px;color:var(--muted)}
+details .grid{margin-top:12px}
+.go{margin-top:18px;width:100%;padding:14px;border:0;border-radius:10px;background:var(--pine);color:var(--pine-ink);font:700 16px system-ui;cursor:pointer}
+.sec{margin-top:10px;padding:9px 14px;border:1.5px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:600 14px system-ui;cursor:pointer}
+.erro{margin-top:12px;color:var(--fail);font-weight:600}
+.folha{margin-top:6px;border-left:3px solid var(--mark);padding-left:14px}
+.passo{margin:0 0 20px}
+.passo h3{margin:0 0 6px}
+.eq{font:15px/1.55 "Cambria Math",Georgia,serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.txt{font-size:14px;color:var(--muted)}
+.ok{color:var(--ok);font-weight:600}.fail{color:var(--fail);font-weight:600}
+.passo p{margin:3px 0}
+.resposta{display:flex;justify-content:flex-end;margin-top:8px}
+.R{display:flex;align-items:center;gap:12px;padding:12px 20px;border:3px solid var(--ink);border-radius:999px;background:var(--mark);color:#1C2B27}
+.R b{font:700 22px Georgia,serif}.R span{font-size:13px}
+.R.fail{background:#F3B7AB}
+.sobre p,.sobre li{font-size:15.5px}
+.sobre p{margin:8px 0}
+.sobre ul,.sobre ol{padding-left:22px;margin:6px 0}
+.sobre li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;background:var(--card)}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--pine);color:var(--pine-ink);font-weight:600}
+.autores{list-style:none;padding:0;margin:8px 0;columns:2;column-gap:28px}
+.autores li{font:15px/1.4 var(--serif);margin:3px 0;break-inside:avoid}
+.aviso-box{border:1.5px solid var(--ink);border-left:6px solid var(--mark);border-radius:6px;padding:10px 14px;background:var(--card);font-size:14.5px;margin:14px 0}
+footer{border-top:2px solid var(--ink);padding:14px 0 26px;font-size:13px;color:var(--muted)}
+footer b{color:var(--ink)}
+.cod{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+[hidden]{display:none!important}
+@media (max-width:560px){.autores{columns:1}}
+@media (prefers-reduced-motion:no-preference){.folha{animation:ent .25s ease-out}@keyframes ent{from{opacity:.3}}}
+@media print{
+  body{background:#fff;color:#000;background-image:none}
+  nav.menu,.noprint,details,.go,.seg,.nota,footer .noprint{display:none!important}
+  .R{border-color:#000;background:#fff;color:#000}
+  .printonly{display:block!important}
+}
+.printonly{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap topo">
+    <div class="marca">
+      <h1>TimberCalc</h1>
+      <p>Dimensionamento de peças de madeira à tração e à compressão paralela às fibras · ABNT NBR 7190</p>
+    </div>
+    <nav class="menu" aria-label="Seções">
+      <button id="nav-calc" aria-current="page">Calculadora</button>
+      <button id="nav-sobre">Sobre o projeto</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ===================== CALCULADORA ===================== -->
+<div id="pg-calc">
+
+  <h2><span class="n">1.</span>Critério normativo</h2>
+  <div class="seg" role="group" aria-label="Critério normativo">
+    <button id="m-2022" aria-pressed="true">NBR 7190-1:2022 (atual)</button>
+    <button id="m-1997" aria-pressed="false">NBR 7190:1997 (clássico)</button>
+  </div>
+  <p class="nota" id="descMetodo"></p>
+
+  <h2><span class="n">2.</span>Tipo de esforço</h2>
+  <div class="seg" role="group" aria-label="Tipo de esforço">
+    <button id="t-tracao" aria-pressed="true">Tração</button>
+    <button id="t-compressao" aria-pressed="false">Compressão</button>
+  </div>
+
+  <h2><span class="n">3.</span>Parâmetros de entrada</h2>
+  <div class="grid">
+    <div class="full"><label for="grupo">Dados do enunciado (Trabalho 2) — preenche os campos abaixo</label>
+      <select id="grupo"></select></div>
+    <div class="full"><label for="classe">Classe de resistência</label><select id="classe"></select></div>
+    <div><label for="carregamento">Classe de carregamento</label>
+      <select id="carregamento">
+        <option value="permanente">Permanente</option><option value="longa">Longa duração</option>
+        <option value="media">Média duração</option><option value="curta">Curta duração</option>
+        <option value="instantanea">Instantânea</option>
+      </select></div>
+    <div><label for="umidade">Classe de umidade</label>
+      <select id="umidade"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+    <div><label for="b">Base b (cm)</label><input id="b" inputmode="decimal"></div>
+    <div><label for="h">Altura h (cm)</label><input id="h" inputmode="decimal"></div>
+    <div id="campoL"><label for="L">Comprimento da peça (m)</label><input id="L" inputmode="decimal"></div>
+    <div><label for="Gk">Ação permanente Gk (kN)</label><input id="Gk" inputmode="decimal"></div>
+    <div><label for="Qk">Ação variável Qk (kN)</label><input id="Qk" inputmode="decimal"></div>
+  </div>
+
+  <details>
+    <summary>Coeficientes e resistências (editáveis)</summary>
+    <div class="grid" id="avancado"></div>
+  </details>
+
+  <button class="go" id="calc">Calcular</button>
+  <div class="erro" id="erro" role="alert"></div>
+
+  <section id="saida" hidden>
+    <h2><span class="n">4.</span>Memória de cálculo</h2>
+    <div class="printonly" id="cabPrint"></div>
+    <div class="folha" id="passos"></div>
+    <div class="resposta"><div class="R" id="R"><b>R:</b><b id="Rtxt"></b><span id="Rpct"></span></div></div>
+    <button class="sec noprint" id="imprimir">Imprimir / salvar memória de cálculo em PDF</button>
+  </section>
+</div>
+
+<!-- ===================== SOBRE ===================== -->
+<div id="pg-sobre" class="sobre" hidden>
+
+  <h2><span class="n">1.</span>Finalidade</h2>
+  <p>O <b>TimberCalc</b> é uma ferramenta didática para verificar o dimensionamento de peças de madeira de seção retangular submetidas à <b>tração</b> e à <b>compressão paralelas às fibras</b>, no estado limite último. Para cada cálculo, o aplicativo apresenta a <b>memória de cálculo passo a passo</b> (propriedades de cálculo, combinação de ações, esbeltez e estabilidade) e indica se a peça atende ou não aos requisitos, com a taxa de utilização.</p>
+  <p>Foi desenvolvido como parte do <b>Trabalho 2 – Dimensionamento de peças de madeira: tração e compressão</b> da disciplina de Construções de Madeira (CIV267), para automatizar e conferir os cálculos feitos manualmente e em planilha.</p>
+
+  <h2><span class="n">2.</span>Como usar</h2>
+  <ol>
+    <li>Escolha o <b>critério normativo</b> (NBR 7190-1:2022 ou NBR 7190:1997) e o <b>tipo de esforço</b>.</li>
+    <li>Selecione os dados do enunciado por grupo, ou preencha classe de resistência, carregamento, umidade, seção, comprimento e ações. Os coeficientes podem ser ajustados em “Coeficientes e resistências”.</li>
+    <li>Clique em <b>Calcular</b>. A memória de cálculo pode ser impressa ou salva em PDF.</li>
+  </ol>
+
+  <h2><span class="n">3.</span>Hipóteses adotadas</h2>
+  <ul>
+    <li>Peça prismática, de madeira serrada, com seção transversal retangular.</li>
+    <li>Forças normais paralelas às fibras; ações permanente e variável no mesmo sentido do esforço principal.</li>
+    <li>Peça comprimida com extremidades articuladas e sem travamento intermediário (coeficiente de flambagem KE = 1,0, editável); flambagem verificada nos dois eixos principais.</li>
+    <li>Combinação última normal: Nd = γg·Gk + γq·Qk.</li>
+    <li>Resistência de cálculo: f<sub>d</sub> = k<sub>mod</sub>·f<sub>k</sub> / γ<sub>w</sub>, com k<sub>mod</sub> = k<sub>mod,1</sub>·k<sub>mod,2</sub>.</li>
+  </ul>
+
+  <h2><span class="n">4.</span>As duas versões da norma</h2>
+  <p>O aplicativo permite escolher entre os dois critérios para comparar os resultados:</p>
+  <table>
+    <tr><th>Item</th><th>NBR 7190-1:2022</th><th>NBR 7190:1997 (clássico)</th></tr>
+    <tr><td>γ<sub>w</sub> na tração paralela</td><td>1,4</td><td>1,8</td></tr>
+    <tr><td>γ<sub>w</sub> na compressão paralela</td><td>1,4</td><td>1,4</td></tr>
+    <tr><td>k<sub>mod,2</sub> (umidade 1 / 2 / 3 / 4)</td><td>1,00 / 0,90 / 0,80 / 0,70</td><td>1,00 / 1,00 / 0,80 / 0,80</td></tr>
+    <tr><td>Estabilidade da peça comprimida</td><td>Esbeltez relativa λ<sub>rel</sub> e coeficiente k<sub>c</sub> em cada eixo; σ ≤ k<sub>c</sub>·f<sub>c0,d</sub></td><td>Classificação por λ (curta ≤ 40; medianamente esbelta ≤ 80; esbelta ≤ 140), excentricidade acidental, carga crítica de Euler (F<sub>E</sub>) e, nas esbeltas, fluência (φ, ψ<sub>1</sub>, ψ<sub>2</sub>)</td></tr>
+  </table>
+  <p>Em ambos os critérios, λ = L<sub>0</sub>/i não pode ultrapassar 140.</p>
+
+  <h2><span class="n">5.</span>Limitações</h2>
+  <div class="aviso-box">Ferramenta de caráter <b>acadêmico</b>. Não substitui a consulta às normas, o projeto de um profissional habilitado nem a verificação de flexão, ligações ou estados limites de serviço.</div>
+  <ul>
+    <li>As classes de resistência (tabelas de peças estruturais de coníferas C e folhosas D) são usadas nos dois critérios. Os valores foram transcritos de fonte secundária (SOUSA, 2023) e devem ser conferidos no texto da norma.</li>
+    <li>A classe <b>C70</b>, citada no enunciado, não consta nas tabelas da NBR 7190-1:2022; o aplicativo a trata de forma provisória, com os valores da classe D70.</li>
+    <li>Verificam-se apenas tração e compressão axiais centradas; não há flexão, flexocompressão com cargas laterais, cisalhamento nem furos na tração.</li>
+  </ul>
+
+  <h2><span class="n">6.</span>Autoria</h2>
+  <p>Trabalho do <b>Grupo 7</b>:</p>
+  <ul class="autores">
+    <li>Raquel Márcio da Silva</li>
+    <li>Lívia Maria Hannah de Oliveira Ramos</li>
+    <li>Ryan da Silva Alves</li>
+    <li>Vitória Helena Pereira</li>
+  </ul>
+  <p>Desenvolvido em parceria com a estudante de Ciência da Computação <b>Sabrina Teixeira da Silva</b>.</p>
+
+  <h2><span class="n">7.</span>Referências</h2>
+  <ul>
+    <li>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <b>ABNT NBR 7190-1:2022</b> – Projeto de estruturas de madeira – Parte 1: Critérios de dimensionamento. Rio de Janeiro, 2022.</li>
+    <li>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <b>ABNT NBR 7190:1997</b> – Projeto de estruturas de madeira. Rio de Janeiro, 1997.</li>
+    <li>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <b>ABNT NBR 8681:2003</b> – Ações e segurança nas estruturas – Procedimento. Rio de Janeiro, 2003.</li>
+    <li>SOUSA, P. H. P. <b>Aplicativo para fins de dimensionamento de estruturas de madeira segundo a norma NBR 7190-1/2022</b>. Trabalho de Conclusão de Curso (Engenharia Civil) – IFTO, Campus Palmas, 2023. (fonte secundária das tabelas e coeficientes de 2022)</li>
+  </ul>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>TimberCalc</b> · Trabalho 2 – Construções de Madeira (CIV267) · Grupo 7 · em parceria com Sabrina Teixeira da Silva (Ciência da Computação)<br>
+    Ferramenta acadêmica: confira sempre os resultados com a norma vigente.
+  </div>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// =====================================================================
+// MOTOR DE CÁLCULO – roda inteiramente no navegador (sem servidor)
+// =====================================================================
+// Classes de resistência de peças estruturais (NBR 7190-1:2022, Tabelas 9 e 10), em MPa.
+const CLASSES = {
+  C14:{ft0k:8,fc0k:16,E0m:7000,E005:4700},   C16:{ft0k:10,fc0k:17,E0m:8000,E005:5400},
+  C18:{ft0k:11,fc0k:18,E0m:9000,E005:6000},  C20:{ft0k:12,fc0k:19,E0m:9500,E005:6400},
+  C22:{ft0k:13,fc0k:20,E0m:10000,E005:6700}, C24:{ft0k:14,fc0k:21,E0m:11000,E005:7400},
+  C27:{ft0k:16,fc0k:22,E0m:12000,E005:7700}, C30:{ft0k:18,fc0k:23,E0m:12000,E005:8000},
+  C35:{ft0k:21,fc0k:25,E0m:13000,E005:8700}, C40:{ft0k:24,fc0k:26,E0m:14000,E005:9400},
+  C45:{ft0k:27,fc0k:27,E0m:15000,E005:10000},C50:{ft0k:30,fc0k:29,E0m:16000,E005:11000},
+  D18:{ft0k:11,fc0k:18,E0m:9500,E005:8000},  D24:{ft0k:14,fc0k:21,E0m:10000,E005:8500},
+  D30:{ft0k:18,fc0k:23,E0m:11000,E005:9200}, D35:{ft0k:21,fc0k:25,E0m:12000,E005:10000},
+  D40:{ft0k:24,fc0k:26,E0m:13000,E005:11000},D50:{ft0k:30,fc0k:29,E0m:14000,E005:12000},
+  D60:{ft0k:36,fc0k:32,E0m:17000,E005:14000},D70:{ft0k:42,fc0k:34,E0m:20000,E005:16800},
+  // C70 não existe na norma: valores PROVISÓRIOS (iguais ao D70). Confirme com o professor/norma.
+  C70:{ft0k:42,fc0k:34,E0m:20000,E005:16800,provisorio:true}
+};
+const CARREGAMENTO = {
+  permanente:  {nome:'Permanente',    kmod1:0.60, fluencia:'longa'},
+  longa:       {nome:'Longa duração', kmod1:0.70, fluencia:'longa'},
+  media:       {nome:'Média duração', kmod1:0.80, fluencia:'curta'},
+  curta:       {nome:'Curta duração', kmod1:0.90, fluencia:'curta'},
+  instantanea: {nome:'Instantânea',   kmod1:1.10, fluencia:'curta'}
+};
+const METODOS = {
+  nbr2022:{nome:'NBR 7190-1:2022', kmod2:{1:1.0,2:0.9,3:0.8,4:0.7},
+           defaults:{gammaG:1.4,gammaQ:1.4,gammaWt:1.4,gammaWc:1.4,KE:1,Amin:50,bmin:5}},
+  nbr1997:{nome:'NBR 7190:1997 (método clássico)', kmod2:{1:1.0,2:1.0,3:0.8,4:0.8},
+           defaults:{gammaG:1.4,gammaQ:1.4,gammaWt:1.8,gammaWc:1.4,KE:1,Amin:50,bmin:5,psi1:0.4,psi2:0.3}}
+};
+const PHI = {longa:{1:0.8,2:0.8,3:2.0,4:2.0}, curta:{1:0.3,2:0.3,3:1.0,4:1.0}}; // fluência (1997)
+const BETA_C = 0.2; // madeira maciça serrada (2022)
+
+const f = (n, d=2) => Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const num = (v, nome) => {
+  const n = Number(String(v).trim().replace(',', '.'));
+  if (v === '' || v == null || !isFinite(n)) throw new Error(`Valor inválido em "${nome}".`);
+  return n;
+};
+const L_ = s => ({t:'txt', s});
+const E_ = s => ({t:'eq', s});
+const OK = (s, ok) => ({t: ok?'ok':'fail', s});
+
+function normaliza(inp) {
+  const metodo = METODOS[inp.metodo];
+  if (!metodo) throw new Error('Critério normativo inválido.');
+  const classe = CLASSES[inp.classe];
+  if (!classe) throw new Error('Classe de resistência inválida.');
+  const carr = CARREGAMENTO[inp.carregamento];
+  if (!carr) throw new Error('Classe de carregamento inválida.');
+  const umid = Number(inp.umidade);
+  if (!metodo.kmod2[umid]) throw new Error('Classe de umidade inválida.');
+  const o = inp.avancado || {};
+  const p = {
+    metodoKey: inp.metodo, metodo, tipo: inp.tipo === 'compressao' ? 'compressao' : 'tracao',
+    classeNome: inp.classe, carr, umid, kmod2: metodo.kmod2[umid], provisorio: !!classe.provisorio,
+    ft0k: num(o.ft0k, 'ft0,k'), fc0k: num(o.fc0k, 'fc0,k'), E0m: num(o.E0m, 'E0,m'),
+    b: num(inp.b, 'b'), h: num(inp.h, 'h'), Lm: num(inp.L, 'Comprimento'),
+    Gk: num(inp.Gk, 'Gk'), Qk: num(inp.Qk, 'Qk')
+  };
+  for (const k of Object.keys(metodo.defaults)) p[k] = num(o[k], k);
+  if (inp.metodo === 'nbr2022') p.E005 = num(o.E005, 'E0,05');
+  if (p.b <= 0 || p.h <= 0) throw new Error('A seção transversal deve ter b e h maiores que zero.');
+  if (p.tipo === 'compressao' && p.Lm <= 0) throw new Error('O comprimento deve ser maior que zero.');
+  if (p.tipo === 'compressao' && p.KE <= 0) throw new Error('KE deve ser maior que zero.');
+  if (p.Gk < 0 || p.Qk < 0) throw new Error('As ações devem ser valores positivos (módulo do esforço).');
+  return p;
+}
+
+function etapaCriterio(p, passos) {
+  passos.push({titulo:'Critério normativo', linhas:[L_(p.metodo.nome + (p.metodoKey==='nbr2022'
+    ? ' · estabilidade pelo coeficiente kc' : ' · estabilidade por excentricidades e carga de Euler'))]});
+}
+function etapaPropriedades(p, passos) {
+  const kmod1 = p.carr.kmod1, kmod2 = p.kmod2, kmod = kmod1 * kmod2;
+  const trac = p.tipo === 'tracao';
+  const fk = trac ? p.ft0k : p.fc0k, gw = trac ? p.gammaWt : p.gammaWc;
+  const fd = kmod * fk / gw, sub = trac ? 't0' : 'c0';
+  const linhas = [
+    L_(`Classe ${p.classeNome}: f${sub},k = ${f(fk,1)} MPa` + (trac ? '' : `   |   E0,m = ${f(p.E0m,0)} MPa` + (p.metodoKey==='nbr2022' ? `   |   E0,05 = ${f(p.E005,0)} MPa` : ''))),
+    L_(`Carregamento ${p.carr.nome.toLowerCase()}: kmod,1 = ${f(kmod1)}`),
+    L_(`Umidade classe ${p.umid}: kmod,2 = ${f(kmod2)}`),
+    E_(`kmod = kmod,1 × kmod,2 = ${f(kmod1)} × ${f(kmod2)} = ${f(kmod,3)}`),
+    E_(`f${sub},d = kmod · f${sub},k / γw = ${f(kmod,3)} × ${f(fk,1)} / ${f(gw)} = ${f(fd,2)} MPa`)
+  ];
+  if (p.provisorio) linhas.push(L_('⚠ Valores da classe C70 são provisórios (iguais aos da D70): confira na tabela da norma.'));
+  passos.push({titulo:'Propriedades de cálculo da madeira', linhas});
+  return {kmod, fd};
+}
+function etapaAcoes(p, passos) {
+  const Nd = p.gammaG * p.Gk + p.gammaQ * p.Qk;
+  passos.push({titulo:'Combinação de ações (ELU – combinação normal)', linhas:[
+    L_(`Permanente Gk = ${f(p.Gk)} kN   |   Variável Qk = ${f(p.Qk)} kN`),
+    L_(`γg = ${f(p.gammaG)} (permanente desfavorável)   |   γq = ${f(p.gammaQ)} (variável)`),
+    E_(`Nd = γg·Gk + γq·Qk = ${f(p.gammaG)}×${f(p.Gk)} + ${f(p.gammaQ)}×${f(p.Qk)} = ${f(Nd)} kN`)]});
+  return Nd;
+}
+function etapaDimensoesMinimas(p, A, passos) {
+  const okA = A >= p.Amin, okb = Math.min(p.b, p.h) >= p.bmin;
+  passos.push({titulo:'Dimensões mínimas da seção', linhas:[
+    E_(`A = b × h = ${f(p.b,1)} × ${f(p.h,1)} = ${f(A,1)} cm²`),
+    OK(`A ≥ ${f(p.Amin,0)} cm²  →  ${okA?'atende':'não atende'}`, okA),
+    OK(`menor lado ≥ ${f(p.bmin,0)} cm  →  ${okb?'atende':'não atende'}`, okb)]});
+  return okA && okb;
+}
+
+// ---------- tração (igual nos dois critérios; mudam γw e kmod,2) ----------
+function tracao(p) {
+  const passos = [];
+  etapaCriterio(p, passos);
+  const {fd} = etapaPropriedades(p, passos);
+  const Nd = etapaAcoes(p, passos);
+  const A = p.b * p.h;
+  const okDim = etapaDimensoesMinimas(p, A, passos);
+  const sigma = Nd / A * 10; // kN/cm² → MPa
+  const razao = sigma / fd, ok = razao <= 1;
+  passos.push({titulo:'Verificação à tração paralela às fibras', linhas:[
+    E_(`σt0,d = Nd / A = ${f(Nd)} / ${f(A,1)} = ${f(sigma/10,4)} kN/cm² = ${f(sigma)} MPa`),
+    E_(`σt0,d ≤ ft0,d  →  ${f(sigma)} ≤ ${f(fd)} MPa`),
+    E_(`Aproveitamento = σt0,d / ft0,d = ${f(razao*100,1)} %`),
+    OK(ok ? 'A peça resiste à tração.' : 'A peça NÃO resiste à tração.', ok)]});
+  return {passos, atende: ok && okDim, razao};
+}
+
+// ---------- compressão – NBR 7190-1:2022 (esbeltez relativa e kc) ----------
+function compressao2022(p) {
+  const passos = [];
+  etapaCriterio(p, passos);
+  const {fd} = etapaPropriedades(p, passos);
+  const Nd = etapaAcoes(p, passos);
+  const A = p.b * p.h;
+  const okDim = etapaDimensoesMinimas(p, A, passos);
+  const sig = Nd * 10 / A;
+  const L0 = p.KE * p.Lm * 100;
+  passos.push({titulo:'Geometria e comprimento de flambagem', linhas:[
+    E_(`σNc,d = Nd / A = ${f(Nd)}·10 / ${f(A,1)} = ${f(sig,3)} MPa`),
+    E_(`L0 = KE·L = ${f(p.KE)} × ${f(p.Lm)} m = ${f(L0,1)} cm`),
+    L_('Eixo x: flambagem no plano de h (I = b·h³/12). Eixo y: flambagem no plano de b (I = h·b³/12).')]});
+  const eixos = [{nome:'x', dim:p.h, I:p.b*p.h**3/12}, {nome:'y', dim:p.b, I:p.h*p.b**3/12}];
+  let maxUso = 0, tudoOk = true; const linEsb = [], linEst = [];
+  for (const e of eixos) {
+    e.i = Math.sqrt(e.I / A); e.lam = L0 / e.i;
+    e.cls = e.lam > 140 ? 'excede λ = 140 (não permitida)' : e.lam <= 40 ? 'peça curta' : e.lam <= 80 ? 'medianamente esbelta' : 'esbelta';
+    e.lr = e.lam / Math.PI * Math.sqrt(p.fc0k / p.E005);
+    if (e.lr <= 0.3) { e.k = NaN; e.kc = 1; }
+    else { e.k = 0.5*(1 + BETA_C*(e.lr-0.3) + e.lr**2); e.kc = 1/(e.k + Math.sqrt(e.k**2 - e.lr**2)); }
+    e.uso = sig / (e.kc * fd); e.ok = e.uso <= 1 && e.lam <= 140;
+    maxUso = Math.max(maxUso, e.lam > 140 ? Infinity : e.uso); tudoOk = tudoOk && e.ok;
+    linEsb.push(E_(`Eixo ${e.nome}: I = ${f(e.I,1)} cm⁴ · i = √(I/A) = ${f(e.i,3)} cm · λ${e.nome} = L0/i = ${f(e.lam,2)}`));
+    linEsb.push({t: e.lam<=140?'txt':'fail', s:`Eixo ${e.nome}: ${e.cls}`});
+    linEst.push(E_(`Eixo ${e.nome}: λrel = (λ/π)·√(fc0,k/E0,05) = ${f(e.lam/Math.PI,3)}·√(${f(p.fc0k,1)}/${f(p.E005,0)}) = ${f(e.lr,3)}`));
+    if (e.lr <= 0.3) linEst.push(L_(`Eixo ${e.nome}: λrel ≤ 0,3 → dispensa verificação de estabilidade (kc = 1)`));
+    else {
+      linEst.push(E_(`Eixo ${e.nome}: k = 0,5·[1 + βc·(λrel − 0,3) + λrel²] = ${f(e.k,4)}  (βc = 0,2)`));
+      linEst.push(E_(`Eixo ${e.nome}: kc = 1 / (k + √(k² − λrel²)) = ${f(e.kc,4)}`));
+    }
+  }
+  passos.push({titulo:'Esbeltez (dois eixos)', linhas:linEsb});
+  passos.push({titulo:'Esbeltez relativa e estabilidade', linhas:linEst});
+  passos.push({titulo:'Verificação à compressão (estabilidade)', linhas:
+    eixos.map(e => OK(`Eixo ${e.nome}: σNc,d / (kc·fc0,d) = ${f(sig,3)} / (${f(e.kc,4)}·${f(fd,2)}) = ${f(e.uso,3)} ${e.uso<=1?'≤':'>'} 1  →  ${e.ok?'atende':'NÃO atende'}`, e.ok))
+      .concat([L_(`Eixo crítico: ${eixos[0].uso >= eixos[1].uso ? 'x' : 'y'}`)])});
+  return {passos, atende: tudoOk && okDim, razao: maxUso};
+}
+
+// ---------- compressão – NBR 7190:1997 (método clássico) ----------
+function compressao1997(p) {
+  const passos = [];
+  etapaCriterio(p, passos);
+  const {kmod, fd} = etapaPropriedades(p, passos);
+  const Nd = etapaAcoes(p, passos);
+  const A = p.b * p.h;
+  const okDim = etapaDimensoesMinimas(p, A, passos);
+  const sigmaN = Nd / A * 10;
+  const Lc = p.KE * p.Lm * 100;
+  const Eef = kmod * p.E0m;
+  const phi = PHI[p.carr.fluencia][p.umid];
+  const Ng = p.Gk, Nq = p.Qk, psiSoma = Math.min(p.psi1 + p.psi2, 1);
+  passos.push({titulo:'Esbeltez e flambagem nos dois eixos', linhas:[
+    L_(`L0 = KE·L = ${f(p.KE)} × ${f(p.Lm)} m = ${f(Lc,0)} cm (articulada, sem travamento)`),
+    E_(`Eixo x (flexão em h): Ix = b·h³/12 = ${f(p.b*p.h**3/12,0)} cm⁴ ; ix = h/√12 = ${f(p.h/Math.sqrt(12),2)} cm`),
+    E_(`Eixo y (flexão em b): Iy = h·b³/12 = ${f(p.h*p.b**3/12,0)} cm⁴ ; iy = b/√12 = ${f(p.b/Math.sqrt(12),2)} cm`),
+    E_(`λx = L0/ix = ${f(Lc/(p.h/Math.sqrt(12)),1)}   |   λy = L0/iy = ${f(Lc/(p.b/Math.sqrt(12)),1)}`),
+    L_('Classificação: λ ≤ 40 curta · 40 < λ ≤ 80 medianamente esbelta · 80 < λ ≤ 140 esbelta · λ > 140 não permitida.')]});
+  const eixos = [{nome:'x', dim:p.h, lado:p.b}, {nome:'y', dim:p.b, lado:p.h}];
+  let pior = 0, tudoOk = true;
+  for (const ex of eixos) {
+    const I = ex.lado*ex.dim**3/12, W = ex.lado*ex.dim**2/6;
+    const i = ex.dim/Math.sqrt(12), lam = Lc/i;
+    const linhas = [E_(`λ${ex.nome} = ${f(lam,1)}`)];
+    let razao, ok;
+    if (lam > 140) {
+      linhas.push(OK('λ > 140: peça esbelta demais, não é permitida pela norma.', false)); razao = Infinity; ok = false;
+    } else if (lam <= 40) {
+      razao = sigmaN/fd; ok = razao <= 1;
+      linhas.push(L_('Peça CURTA: sem efeitos de 2ª ordem; verifica-se apenas a resistência.'));
+      linhas.push(E_(`σc0,d = ${f(sigmaN)} MPa  ≤  fc0,d = ${f(fd)} MPa`));
+    } else {
+      const esbelta = lam > 80;
+      const FE = Math.PI**2 * (Eef/10) * I / Lc**2; // kN
+      const ea = Lc/300, e1 = 0, ei = e1 + ea;
+      linhas.push(L_(`Peça ${esbelta?'ESBELTA':'MEDIANAMENTE ESBELTA'}: considera-se excentricidade acidental e 2ª ordem.`));
+      linhas.push(E_(`Eef = kmod·E0,m = ${f(kmod,3)} × ${f(p.E0m,0)} = ${f(Eef,0)} MPa`));
+      linhas.push(E_(`FE = π²·Eef·I / L0² = ${f(FE,1)} kN`));
+      linhas.push(E_(`ea = L0/300 = ${f(ea,2)} cm ; e1 = 0 (carga axial) ; ei = e1 + ea = ${f(ei,2)} cm`));
+      let e1ef = ei;
+      if (esbelta) {
+        const Nsus = Ng + psiSoma*Nq;
+        const ec = FE > Nsus ? ea*(Math.exp(phi*Nsus/(FE-Nsus)) - 1) : Infinity;
+        e1ef = ei + ec;
+        linhas.push(E_(`φ = ${f(phi,1)} ; Ng + (ψ1+ψ2)·Nq = ${f(Ng)} + ${f(psiSoma)}×${f(Nq)} = ${f(Nsus)} kN`));
+        linhas.push(E_(`ec = ea·[exp(φ·Nsus/(FE − Nsus)) − 1] = ${f(ec,3)} cm`));
+        linhas.push(E_(`e1,ef = ei + ec = ${f(e1ef,3)} cm`));
+      }
+      if (Nd >= FE || !isFinite(e1ef)) {
+        linhas.push(OK(`Nd = ${f(Nd)} kN ≥ FE = ${f(FE,1)} kN: instabilidade (flambagem).`, false)); razao = Infinity; ok = false;
+      } else {
+        const ed = e1ef*FE/(FE-Nd), Md = Nd*ed, sigmaM = Md/W*10;
+        razao = (sigmaN + sigmaM)/fd; ok = razao <= 1;
+        linhas.push(E_(`ed = e1,ef·FE/(FE − Nd) = ${f(ed,3)} cm`));
+        linhas.push(E_(`Md = Nd·ed = ${f(Md,1)} kN·cm ; W = ${f(W,0)} cm³ ; σMd = Md/W = ${f(sigmaM)} MPa`));
+        linhas.push(E_(`σNd/fc0,d + σMd/fc0,d = ${f(sigmaN/fd,3)} + ${f(sigmaM/fd,3)} = ${f(razao,3)} ≤ 1`));
+      }
+    }
+    if (lam <= 140) linhas.push(OK(`Eixo ${ex.nome}: ${ok?'atende':'NÃO atende'} (aproveitamento ${f(razao*100,1)} %)`, ok));
+    passos.push({titulo:`Estabilidade – flambagem em torno do eixo ${ex.nome}`, linhas});
+    pior = Math.max(pior, razao); tudoOk = tudoOk && ok;
+  }
+  passos.push({titulo:'Resultado da verificação', linhas:[OK(tudoOk ? 'A peça é estável e resiste à compressão nos dois eixos.' : 'A peça NÃO atende em pelo menos um eixo.', tudoOk)]});
+  return {passos, atende: tudoOk && okDim, razao: pior};
+}
+
+function calcular(inp) {
+  const p = normaliza(inp);
+  const r = p.tipo === 'tracao' ? tracao(p) : (p.metodoKey === 'nbr2022' ? compressao2022(p) : compressao1997(p));
+  return {
+    passos: r.passos, atende: r.atende, metodo: p.metodo.nome,
+    razao: isFinite(r.razao) ? r.razao : null,
+    resumo: r.atende ? 'ATENDE' : 'NÃO ATENDE',
+    aproveitamento: isFinite(r.razao) ? f(r.razao*100,1) + ' %' : '—'
+  };
+}
+// =====================================================================
+// FIM DO MOTOR
+// =====================================================================
+
+// Dados do enunciado do Trabalho 2, por grupo
+const GRUPOS = [
+  {nome:'Grupo 1', classe:'C20', carr:'longa',       um:'1', b:'8',  h:'16', L:'2'},
+  {nome:'Grupo 2', classe:'C27', carr:'media',       um:'2', b:'8',  h:'18', L:'2,2'},
+  {nome:'Grupo 3', classe:'C35', carr:'curta',       um:'3', b:'10', h:'20', L:'2,5'},
+  {nome:'Grupo 4', classe:'C40', carr:'instantanea', um:'4', b:'10', h:'20', L:'2,5'},
+  {nome:'Grupo 5', classe:'D24', carr:'permanente',  um:'1', b:'10', h:'22', L:'2,8'},
+  {nome:'Grupo 6', classe:'D30', carr:'curta',       um:'2', b:'12', h:'20', L:'2,8'},
+  {nome:'Grupo 7', classe:'D50', carr:'longa',       um:'3', b:'12', h:'24', L:'3'},
+  {nome:'Grupo 8', classe:'C70', carr:'instantanea', um:'4', b:'12', h:'24', L:'3'}
+];
+const CARGAS = {tracao:{Gk:'10',Qk:'15'}, compressao:{Gk:'25',Qk:'35'}};
+const CAMPOS_AV = [ // [chave, rótulo, só neste critério]
+  ['ft0k','ft0,k (MPa)'],['fc0k','fc0,k (MPa)'],['E0m','E0,m (MPa)'],['E005','E0,05 (MPa)','nbr2022'],
+  ['gammaG','γg'],['gammaQ','γq'],['gammaWt','γw tração'],['gammaWc','γw compressão'],
+  ['KE','KE (coef. de flambagem)'],['psi1','ψ1','nbr1997'],['psi2','ψ2','nbr1997'],
+  ['Amin','Área mínima (cm²)'],['bmin','Lado mínimo (cm)']
+];
+const DESC = {
+  nbr2022:'Critério atual: γw = 1,4 na tração e na compressão; kmod,2 = 1,00 / 0,90 / 0,80 / 0,70; estabilidade pela esbeltez relativa e pelo coeficiente kc.',
+  nbr1997:'Critério clássico: γw = 1,8 na tração e 1,4 na compressão; kmod,2 = 1,00 / 1,00 / 0,80 / 0,80; peças curtas, medianamente esbeltas e esbeltas, com excentricidade acidental, carga de Euler e fluência.'
+};
+let tipo = 'tracao', metodo = 'nbr2022';
+
+function aplicaGrupo(i) {
+  const g = GRUPOS[i]; if (!g) return;
+  $('classe').value = g.classe; $('carregamento').value = g.carr; $('umidade').value = g.um;
+  $('b').value = g.b; $('h').value = g.h; $('L').value = g.L;
+  preencheClasse();
+}
+function preencheClasse() {
+  const c = CLASSES[$('classe').value];
+  ['ft0k','fc0k','E0m','E005'].forEach(k => $('av-'+k).value = c[k]);
+}
+function setTipo(t) {
+  tipo = t;
+  $('t-tracao').setAttribute('aria-pressed', t==='tracao');
+  $('t-compressao').setAttribute('aria-pressed', t==='compressao');
+  $('campoL').hidden = t==='tracao';
+  $('Gk').value = CARGAS[t].Gk; $('Qk').value = CARGAS[t].Qk;
+  $('saida').hidden = true; $('erro').textContent = '';
+}
+function setMetodo(m) {
+  metodo = m;
+  $('m-2022').setAttribute('aria-pressed', m==='nbr2022');
+  $('m-1997').setAttribute('aria-pressed', m==='nbr1997');
+  $('descMetodo').textContent = DESC[m];
+  const d = METODOS[m].defaults;
+  Object.keys(d).forEach(k => { const el = $('av-'+k); if (el) el.value = d[k]; });
+  CAMPOS_AV.forEach(([k,,so]) => { if (so) $('wav-'+k).hidden = so !== m; });
+  $('saida').hidden = true; $('erro').textContent = '';
+}
+function pagina(p) {
+  $('pg-calc').hidden = p !== 'calc'; $('pg-sobre').hidden = p !== 'sobre';
+  if (p === 'calc') { $('nav-calc').setAttribute('aria-current','page'); $('nav-sobre').removeAttribute('aria-current'); }
+  else { $('nav-sobre').setAttribute('aria-current','page'); $('nav-calc').removeAttribute('aria-current'); }
+  window.scrollTo(0, 0);
+}
+
+function init() {
+  $('classe').innerHTML = Object.keys(CLASSES).map(k => `<option>${k}</option>`).join('');
+  $('grupo').innerHTML = GRUPOS.map((g,i) => `<option value="${i}">${g.nome}</option>`).join('');
+  $('avancado').innerHTML = CAMPOS_AV.map(([k,r]) =>
+    `<div id="wav-${k}"><label for="av-${k}">${r}</label><input id="av-${k}" inputmode="decimal"></div>`).join('');
+  $('grupo').value = '6'; // Grupo 7
+  aplicaGrupo(6);
+  setMetodo('nbr2022'); setTipo('tracao');
+}
+
+$('classe').onchange = preencheClasse;
+$('grupo').onchange = () => aplicaGrupo(Number($('grupo').value));
+$('t-tracao').onclick = () => setTipo('tracao');
+$('t-compressao').onclick = () => setTipo('compressao');
+$('m-2022').onclick = () => setMetodo('nbr2022');
+$('m-1997').onclick = () => setMetodo('nbr1997');
+$('nav-calc').onclick = () => pagina('calc');
+$('nav-sobre').onclick = () => pagina('sobre');
+$('imprimir').onclick = () => window.print();
+
+$('calc').onclick = () => {
+  $('erro').textContent = '';
+  const avancado = {}; CAMPOS_AV.forEach(([k]) => avancado[k] = $('av-'+k).value);
+  const corpo = {metodo, tipo, classe:$('classe').value, carregamento:$('carregamento').value, umidade:$('umidade').value,
+    b:$('b').value, h:$('h').value, L: tipo==='compressao' ? $('L').value : '1', Gk:$('Gk').value, Qk:$('Qk').value, avancado};
+  try { mostra(calcular(corpo)); }
+  catch (e) { $('erro').textContent = e.message; $('saida').hidden = true; }
+};
+
+function esc(s) { return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function mostra(d) {
+  $('passos').innerHTML = d.passos.map(p => `<div class="passo"><h3>${esc(p.titulo)}</h3>${
+    p.linhas.map(l => `<p class="${l.t}">${esc(l.s)}</p>`).join('')}</div>`).join('');
+  $('Rtxt').textContent = d.resumo; $('Rpct').textContent = 'uso ' + d.aproveitamento;
+  $('R').classList.toggle('fail', !d.atende);
+  $('cabPrint').innerHTML = `<p><b>TimberCalc</b> · ${esc(d.metodo)} · ${tipo==='tracao'?'Tração':'Compressão'} · ${esc($('grupo').selectedOptions ? $('grupo').selectedOptions[0].textContent : '')}</p>`;
+  $('saida').hidden = false;
+  $('saida').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'});
+}
+init();
+</script>
+</body>
+</html>
