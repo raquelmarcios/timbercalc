@@ -7,7 +7,7 @@ Desenvolvida para o Trabalho 2 – Dimensionamento de peças de madeira: traçã
 
 # Como rodar
 
-Acesse a página publicada (GitHub Pages) ou abra o arquivo index.html no navegador. Não precisa instalar nada nem rodar servidor.
+Acesse a página publicada (GitHub Pages)/ - https://raquelmarcios.github.io/timbercalc/ ou abra o arquivo index.html no navegador. Não precisa instalar nada nem rodar servidor.
 
 Escolha o critério normativo e o tipo de esforço.
 Selecione os dados do enunciado por grupo ou preencha os parâmetros.
