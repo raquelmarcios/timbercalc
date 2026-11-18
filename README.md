@@ -15,9 +15,9 @@ Autoria
 
 Grupo 7
 
-Raquel Márcio da Silva
-Lívia Maria Hannah de Oliveira Ramos
-Ryan da Silva Alves
+Raquel Márcio da Silva,
+Lívia Maria Hannah de Oliveira Ramos,
+Ryan da Silva Alves,
 Vitória Helena Pereira
 
 Em parceria com a estudante de Ciência da Computação Sabrina Teixeira da Silva.
