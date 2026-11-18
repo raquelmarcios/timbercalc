@@ -23,16 +23,19 @@ https://raquelmarcios.github.io/timbercalc/
 3. Clique em **Calcular**.
 4. Confira a memória de cálculo e o resultado final.
 5. Se quiser, salve a memória de cálculo em PDF.
+   
 ## Tecnologias
  
 - HTML, CSS e JavaScript puros, sem frameworks e sem dependências a instalar.
 - Hospedagem estática gratuita com GitHub Pages.
+  
 ## Autoria: Grupo 7
- 
+
 - Raquel Márcio da Silva
 - Lívia Maria Hannah de Oliveira Ramos
 - Ryan da Silva Alves
 - Vitória Helena Pereira
+
 Em parceria com a estudante de Ciência da Computação Sabrina Teixeira ([@sxbrinz](https://github.com/sxbrinz)).
  
 ## Aviso
